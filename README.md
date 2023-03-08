@@ -1,6 +1,14 @@
 # SpringDB-01
 
 ## 2023.03.08
+### Test Package Lombok
+- build.gradle 에 다음과 같은 코드르 추가해주어야 한다.
+```java
+//Slf4j를 사용하기 위해 lombok를 추가해줘야함
+testCompileOnly 'org.projectlombok:lombok'
+testAnnotationProcessor 'org.projectlombok:lombok'
+```
+
 ### Abstract Class
 
 - 객체의 생성을 막기 위해 추상 클래스를 사용한다하였음. 살짝 헷갈린 부분은 생성을 막는다고 해서 생성자를 못 쓰는건아니다. 추상클래스는 클래스의 상속용도로 사용되기 때문에 생성자를 통해서 자식 클래스에서 
