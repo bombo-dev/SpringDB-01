@@ -55,3 +55,23 @@ Assertions.assertThatThrownBy(() -> repository.findById(memberId)).isInstanceOf(
 - 기존에는 요청이 필요할 때 마다, getConnection 메소드를 호출해서 URL, USERNAME, PASSWORD 등 파라미터를 계속 호출해야 하는 문제가 있었지만, DataSource를 활용하면 처음에만 설정 파일을 통해 DataSource를 생성하면 이후에는 파라미터의 사용없이 커넥션을 획득할 수 있다. 이 처럼 실행과 설정을 분리해야 하고, 이러한 개념이 `개방폐쇄 원칙`이다.
 - 추가적으로 `HikariPool`에서 커넥션 풀을 획득하는 모습을 보면 커넥션 풀이 다 채워진 것을 확인하기도 전에 테스트가 종료되는 것을 볼 수 있었는데, `Connection Pool`을 획득하는 과정은 결국 여러개의 여러 개의 Connection을 요청하는 것과 같고, 이는 TCP/IP 통신이 이용되어야 때문에 애플리케이션 실행 시 무거워질 수 있다. 따라서 다른 스레드에서 실행되기 때문에 이러한 문제가 발생하는 것이다.
 이러한 개념을 `sync`, `non-blocking` 에 대입 할 수 있을 것 같다.
+
+### DriverManagerDataSource 와 HikariDataSource 수행 시간 차이
+- 계속해서 커넥션을 획득하기 위해 DB에 요청하면 TCP/IP 통신으로 인한 시간 지연이 발생한다고 배웠다. 실제로 그를 예방하기 위해 커넥션 풀을 사용했는데, 그 시간차이가 어느정도인지 테스트를 해보고 싶었다.
+```java
+@Test
+void calcConnectionTime() throws SQLException, InterruptedException {
+    //save 100개
+    long startTime = System.currentTimeMillis();
+    for(int i = 0; i < 100; i++){
+        repository.save(new Member("memberV" + i, 10000));
+    }
+    long endTime = System.currentTimeMillis();
+    log.info("걸린 시간 : {}", endTime - startTime);
+    Thread.sleep(1000);
+}
+```
+- 다음과 같이 간단한 테스트 코드를 작성해봤고, repository는 DataSource에 의해 의존주입 받고 있기 때문에 구현 객체만 바꿔서 걸린 시간을 확인해봤다.
+INFO hello.jdbc.repository.MemberRepositoryV1Test - 걸린 시간 : 152 -> HikariPool
+INFO hello.jdbc.repository.MemberRepositoryV1Test - 걸린 시간 : 402 -> DriverManagerDataSource
+- 100개의 작은 데이터만 넣었을 뿐인데도, 250ms 나 차이가 났다. MySQL의 경우 커넥션 획득에 걸리는 시간이 1ms 정도라고 했는데, H2는 아무래도 좀 더 걸리는 것으로 예상된다. 
