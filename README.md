@@ -33,3 +33,7 @@ public boolean equals(Object o) {
     // money는 primitive 타입이기때문에 == 으로 비교가 가능하지만, memberId는 String이라서 동등성 비교를 해주어야 한다.
 }
 ```
+### 예외 발생 테스트 코드
+```java
+Assertions.assertThatThrownBy(() -> repository.findById(memberId)).isInstanceOf(예외클래스.class);
+```
