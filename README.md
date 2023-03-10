@@ -187,3 +187,10 @@ private String generateNewId(String memberId) {
 이렇게 세 가지 생각이 들었다. 결론부터 얘기하자면 마지막처럼 발생을 했다. 정확하게 콜 스택에 쌓인만큼만 실행하고 리턴되기 때문이다.   
 그렇다면 RuntimeException 같은 경우는 catch로 처리를 하였는데도, 처리를 하지 못해서 throws로 던지게 되면 상위 계층에서는 throws가 발생했는지 개발자가 모르기 때문에 어떻게 해야할까 라는 고민에 도착했다. 떠오른건 이때 `ControllerAdvice`의 진가가 드러나지 않나 생각한다. `ControllerAdvice`를 통해서 서버에 도달하기 전에 해당 예외가 발생해서 도착했을 때 추가로 잡아주면 해결이 된다고 생각했다. 이런 경우에 따라서도 매뉴얼이 중요하다고 생각한다.
 
+### 스프링이 제공해주는 예외처리
+해당 파트를 미리 공부하고 프로젝트를 진행했으면 더 좋았을텐데 싶은 파트였다. 기존에 Null ID, Duplicate 등등 발생하는 예외에 대해서 모두 직접 순수하게 예외를 만들어서 처리해주었다.
+게다가 계층적으로 관리하지 않고, 그냥 따로따로 관리해서 예외이름으로만 예외를 파악할 수 있도록 해놓은 것이 큰 문제였던 것 같다.   
+이러한 문제를 스프링은 DB에 종속적이지 않게 미리 에러코드를 잡아서 처리 할 수 있도록 해놨는데, `org.springframework.jdbc.support.sql-error-codes.xml` 에 모든 DB에서 발생하는 예외에 대한 에러코드들을 전부 작성해두었다. 이러한 예외코드에 대해서 스프링은 다음과 같이 처리한다.      
+`new SQLErrorCodeSQLExceptionTranslator(dataSource).translate(String task, @Nullable String sql, SQLException ex);`   
+여기서 의문이었던 부분은 저 String task에 들어가야 하는게 무엇인가 하는 부분이였는데 공식문서를 읽어보면 `시도중인 작업을 설명할 수 있는 텍스트` 라고 적혀있는데 이는 기존 예외를 처리할 때의 message랑 같은거였다.   
+실제로 예외를 발생시켜서 task에 llk 라고 적어놓으면 SQL was [sql(파라미터에 있는 sql)] for task [task(파라미터에 있는 task)] 로 나오는건 확인할 수 있었다.
